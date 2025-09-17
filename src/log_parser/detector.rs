@@ -1,4 +1,4 @@
-use super::formats::LogFormat;
+use super::formats::{bunnycdn::BunnyCDNLogParser, LogFormat, LogLineParser};
 use super::patterns::{APACHE_LOG_PATTERN, CLF_LOG_PATTERN};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -16,9 +16,17 @@ pub fn detect_format(lines: &[String]) -> FormatDetectionResult {
     let sample_size = lines.len().min(50);
     let sample = &lines[0..sample_size];
 
+    let bunnycdn_parser = BunnyCDNLogParser;
+
     for line in sample {
         if line.trim().is_empty() {
             continue;
+        }
+
+        // Check for BunnyCDN format
+        let bunnycdn_confidence = bunnycdn_parser.confidence(line);
+        if bunnycdn_confidence > 0.0 {
+            *scores.entry(LogFormat::BunnyCDN).or_insert(0.0) += bunnycdn_confidence;
         }
 
         // Check for JSON first

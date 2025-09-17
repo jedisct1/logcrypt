@@ -1,4 +1,5 @@
 pub mod apache;
+pub mod bunnycdn;
 pub mod generic;
 pub mod json;
 
@@ -7,6 +8,7 @@ use anyhow::Result;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LogFormat {
     ApacheCombined,
+    BunnyCDN,
     CommonLog,
     Json,
     Syslog,
@@ -18,6 +20,7 @@ impl LogFormat {
     pub fn name(&self) -> &str {
         match self {
             LogFormat::ApacheCombined => "Apache Combined",
+            LogFormat::BunnyCDN => "BunnyCDN",
             LogFormat::CommonLog => "Common Log Format",
             LogFormat::Json => "JSON",
             LogFormat::Syslog => "Syslog",
@@ -29,6 +32,9 @@ impl LogFormat {
 
 pub trait LogLineParser {
     fn parse_line(&self, line: &str) -> Result<ParsedLogLine>;
+    fn confidence(&self, _line: &str) -> f32 {
+        0.0
+    }
 }
 
 #[derive(Debug, Clone)]

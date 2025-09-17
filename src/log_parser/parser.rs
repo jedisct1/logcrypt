@@ -1,7 +1,7 @@
 use super::detector::detect_format;
 use super::formats::{
-    apache::ApacheLogParser, generic::GenericLogParser, json::JsonLogParser, LogFormat,
-    LogLineParser,
+    apache::ApacheLogParser, bunnycdn::BunnyCDNLogParser, generic::GenericLogParser,
+    json::JsonLogParser, LogFormat, LogLineParser,
 };
 use crate::ipcrypt_module;
 use crate::uricrypt_module;
@@ -62,6 +62,7 @@ impl LogParser {
     fn get_parser(format: &LogFormat) -> Box<dyn LogLineParser> {
         match format {
             LogFormat::ApacheCombined | LogFormat::CommonLog => Box::new(ApacheLogParser),
+            LogFormat::BunnyCDN => Box::new(BunnyCDNLogParser),
             LogFormat::Json => Box::new(JsonLogParser),
             _ => Box::new(GenericLogParser),
         }
