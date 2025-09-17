@@ -384,7 +384,7 @@ Traditional Encryption:
 
 ```
 Original:       192.168.1.1    192.168.1.2    192.168.2.1
-Encrypted:      a7f9c4e3      2b8d1a9f      5e3c7b2a
+Encrypted:         a7f9c4e3       2b8d1a9f       5e3c7b2a
 ```
 
 All relationships lost - useless for analysis
@@ -393,7 +393,7 @@ LogCrypt (Prefix-Preserving):
 
 ```
 Original:       192.168.1.1    192.168.1.2    192.168.2.1
-Encrypted:      45.67.89.1    45.67.89.2    45.67.90.1
+Encrypted:       45.67.89.1     45.67.89.2     45.67.90.1
 ```
 
 Subnet relationships preserved - analysis ready!
