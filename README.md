@@ -2,7 +2,7 @@
 
 A command-line tool for prefix-preserving encryption of IP addresses and URIs in logs and data files. Enables privacy-compliant data analysis while maintaining network and URI hierarchies.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install
@@ -18,37 +18,37 @@ KEY=$(./target/release/logcrypt generate-key)
 ./target/release/logcrypt parse-logs access.log --operation redact -o redacted.log
 ```
 
-## ✨ Features
+## Features
 
-### 🔐 IP Address Encryption with Prefix Preservation
+### IP Address Encryption with Prefix Preservation
 
 - Prefix-preserving encryption: IPs in the same subnet remain in the same encrypted subnet, enabling network topology analysis without exposing real IPs
 - Format-preserving: Encrypted IPs are syntactically valid IP addresses
 - Full IPv4 and IPv6 support: Complete protocol coverage
 - Deterministic: Same input always produces the same encrypted output, enabling correlation analysis
 
-### 🔗 URI/URL Encryption with Hierarchy Preservation
+### URI/URL Encryption with Hierarchy Preservation
 
 - Hierarchy-preserving encryption: Maintains URI path structure, preserving the relationship between parent and child paths
 - Full URL and path-only support: Handles both complete URLs (https://example.com/api/v1/users) and relative paths (/api/v1/users)
 - Component preservation: Encrypts while maintaining query parameters, fragments, ports, and credentials
 - Multi-scheme support: Works with http, https, ftp, ssh, and other URI schemes
 
-### 📄 Log File Processing
+### Log File Processing
 
 - Auto-detection: Automatically identifies Apache, Nginx, JSON, Syslog formats
 - Batch processing: Handle entire log files efficiently
 - Structure preservation: Maintains original log format
 - Multiple operations: Encrypt, decrypt, or redact sensitive data
 
-### 🛠️ Additional Features
+### Additional Features
 
 - Batch processing: Process multiple IPs/URIs from files
 - JSON output: Integration-friendly output format
 - Environment variables: Store keys securely
 - Dry-run mode: Preview changes before applying
 
-## 📦 Installation
+## Installation
 
 ### From Source
 
@@ -73,7 +73,7 @@ cp target/release/logcrypt ~/.local/bin/
 sudo cp target/release/logcrypt /usr/local/bin/
 ```
 
-## 🔑 Key Management
+## Key Management
 
 ### Generating Keys
 
@@ -87,7 +87,7 @@ logcrypt generate-key
 export LOGCRYPT_KEY=$(logcrypt generate-key)
 ```
 
-⚠️ Important: The two 16-byte halves of the key must be different for security reasons. LogCrypt automatically generates keys with this property and validates all keys before use.
+Important: The two 16-byte halves of the key must be different for security reasons. LogCrypt automatically generates keys with this property and validates all keys before use.
 
 ### Using Environment Variables
 
@@ -103,7 +103,7 @@ logcrypt encrypt-uri "https://example.com/api"
 logcrypt parse-logs access.log --operation encrypt -o encrypted.log
 ```
 
-## 📘 Command Reference
+## Command Reference
 
 ### Generate Key
 
@@ -162,7 +162,7 @@ Options:
   -k, --key <KEY>        Encryption key
 ```
 
-## 💡 Examples
+## Examples
 
 ### Basic IP Encryption
 
@@ -248,7 +248,7 @@ logcrypt encrypt-uri "/api/internal/metrics/detailed"
 # -> /encrypted/xyz/metrics/detailed (child of above)
 ```
 
-## 🔒 Security Considerations
+## Security Considerations
 
 ### Key Security
 
@@ -281,7 +281,7 @@ export LOGCRYPT_KEY_PROD=$(logcrypt generate-key)
 export LOGCRYPT_KEY_DEV=$(logcrypt generate-key)
 ```
 
-## 🎯 Use Cases
+## Use Cases
 
 ### Privacy-Compliant Log Analysis
 
@@ -341,7 +341,7 @@ Enable cross-tenant analytics while maintaining tenant isolation:
 logcrypt parse-logs tenant-A.log --operation encrypt --key $TENANT_A_KEY -o tenant-A-encrypted.log
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -376,7 +376,7 @@ Format detection issues
 logcrypt parse-logs custom.log --format apache --operation redact
 ```
 
-## 🔬 How Prefix-Preserving Encryption Works
+## How Prefix-Preserving Encryption Works
 
 ### Traditional Encryption vs LogCrypt
 
@@ -405,7 +405,7 @@ Subnet relationships preserved - analysis ready!
 3. Enables Correlation: Trace requests across systems while protecting sensitive identifiers
 4. Privacy by Design: Original values cannot be recovered without the encryption key
 
-## 🏗️ Architecture
+## Architecture
 
 ### Building Blocks
 
