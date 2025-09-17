@@ -9,30 +9,52 @@ use clap::Parser;
 use cli::{Cli, Commands, LogOperation};
 use log_parser::{LogParser, ParseOperation, ParseOptions};
 
+fn process_single_item(
+    input: &str,
+    key: &Option<String>,
+    output: &Option<cli::OutputFormat>,
+    operation: fn(&str, &[u8]) -> Result<String>,
+    error_msg: &str,
+) -> Result<()> {
+    let key_bytes = utils::get_key_from_env_or_arg(key)?;
+    let result =
+        operation(input, &key_bytes).map_err(|e| anyhow::anyhow!("{}: {}", error_msg, e))?;
+    utils::output_result(&result, output.as_ref())?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::EncryptIp { ip, key, output } => {
-            let key_bytes = utils::get_key_from_env_or_arg(key)?;
-            let encrypted = ipcrypt_module::encrypt_ip(ip, &key_bytes)?;
-            utils::output_result(&encrypted, output.as_ref())?;
-        }
-        Commands::DecryptIp { ip, key, output } => {
-            let key_bytes = utils::get_key_from_env_or_arg(key)?;
-            let decrypted = ipcrypt_module::decrypt_ip(ip, &key_bytes)?;
-            utils::output_result(&decrypted, output.as_ref())?;
-        }
-        Commands::EncryptUri { uri, key, output } => {
-            let key_bytes = utils::get_key_from_env_or_arg(key)?;
-            let encrypted = uricrypt_module::encrypt_uri(uri, &key_bytes)?;
-            utils::output_result(&encrypted, output.as_ref())?;
-        }
-        Commands::DecryptUri { uri, key, output } => {
-            let key_bytes = utils::get_key_from_env_or_arg(key)?;
-            let decrypted = uricrypt_module::decrypt_uri(uri, &key_bytes)?;
-            utils::output_result(&decrypted, output.as_ref())?;
-        }
+        Commands::EncryptIp { ip, key, output } => process_single_item(
+            ip,
+            key,
+            output,
+            ipcrypt_module::encrypt_ip,
+            "Failed to encrypt IP address",
+        )?,
+        Commands::DecryptIp { ip, key, output } => process_single_item(
+            ip,
+            key,
+            output,
+            ipcrypt_module::decrypt_ip,
+            "Failed to decrypt IP address",
+        )?,
+        Commands::EncryptUri { uri, key, output } => process_single_item(
+            uri,
+            key,
+            output,
+            uricrypt_module::encrypt_uri,
+            "Failed to encrypt URI",
+        )?,
+        Commands::DecryptUri { uri, key, output } => process_single_item(
+            uri,
+            key,
+            output,
+            uricrypt_module::decrypt_uri,
+            "Failed to decrypt URI",
+        )?,
         Commands::Batch {
             input,
             output,

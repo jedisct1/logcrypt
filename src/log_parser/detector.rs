@@ -21,22 +21,21 @@ pub fn detect_format(lines: &[String]) -> FormatDetectionResult {
             continue;
         }
 
-        if APACHE_LOG_PATTERN.is_match(line) {
-            *scores.entry(LogFormat::ApacheCombined).or_insert(0.0) += 1.0;
-        }
-
-        if CLF_LOG_PATTERN.is_match(line) {
-            *scores.entry(LogFormat::CommonLog).or_insert(0.0) += 1.0;
-        }
-
+        // Check for JSON first
         if line.trim().starts_with('{')
             && line.trim().ends_with('}')
             && serde_json::from_str::<Value>(line).is_ok()
         {
             *scores.entry(LogFormat::Json).or_insert(0.0) += 1.0;
         }
-
-        if contains_syslog_pattern(line) {
+        // Then Apache formats (which have specific patterns)
+        else if APACHE_LOG_PATTERN.is_match(line) {
+            *scores.entry(LogFormat::ApacheCombined).or_insert(0.0) += 1.0;
+        } else if CLF_LOG_PATTERN.is_match(line) {
+            *scores.entry(LogFormat::CommonLog).or_insert(0.0) += 1.0;
+        }
+        // Then syslog (which is more generic)
+        else if contains_syslog_pattern(line) {
             *scores.entry(LogFormat::Syslog).or_insert(0.0) += 1.0;
         }
 

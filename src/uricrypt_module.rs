@@ -1,5 +1,22 @@
+//! URICrypt module for encrypting and decrypting URIs
+//!
+//! This module provides hierarchy-preserving encryption for URIs and URLs.
+//! The encryption preserves the hierarchical structure of URIs while protecting
+//! sensitive information in paths, queries, and other components.
+
 use anyhow::{anyhow, Result};
 
+/// Encrypt a URI using hierarchy-preserving encryption
+///
+/// # Arguments
+/// * `uri` - The URI to encrypt
+/// * `key` - 32-byte encryption key
+///
+/// # Returns
+/// Encrypted URI as a string
+///
+/// # Errors
+/// Returns an error if the key is not 32 bytes
 pub fn encrypt_uri(uri: &str, key: &[u8]) -> Result<String> {
     if key.len() != 32 {
         return Err(anyhow!("URI key must be 32 bytes (64 hex characters)"));
@@ -13,6 +30,17 @@ pub fn encrypt_uri(uri: &str, key: &[u8]) -> Result<String> {
     Ok(encrypted)
 }
 
+/// Decrypt an encrypted URI
+///
+/// # Arguments
+/// * `encrypted_uri` - The encrypted URI to decrypt
+/// * `key` - 32-byte decryption key (must match the encryption key)
+///
+/// # Returns
+/// Decrypted URI as a string
+///
+/// # Errors
+/// Returns an error if the key is not 32 bytes or decryption fails
 pub fn decrypt_uri(encrypted_uri: &str, key: &[u8]) -> Result<String> {
     if key.len() != 32 {
         return Err(anyhow!("URI key must be 32 bytes (64 hex characters)"));
@@ -33,7 +61,8 @@ mod tests {
 
     #[test]
     fn test_uri_encrypt_decrypt() {
-        let key_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        // Key must have different halves for security
+        let key_hex = "0123456789abcdef0123456789abcdeffedcba9876543210fedcba9876543210";
         let key = hex::decode(key_hex).unwrap();
         let uri = "https://example.com/path?query=value";
 
@@ -45,7 +74,8 @@ mod tests {
 
     #[test]
     fn test_uri_with_ip() {
-        let key_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        // Key must have different halves for security
+        let key_hex = "0123456789abcdef0123456789abcdeffedcba9876543210fedcba9876543210";
         let key = hex::decode(key_hex).unwrap();
         let uri = "http://192.168.1.1:8080/api";
 
@@ -57,7 +87,8 @@ mod tests {
 
     #[test]
     fn test_uri_with_auth() {
-        let key_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        // Key must have different halves for security
+        let key_hex = "0123456789abcdef0123456789abcdeffedcba9876543210fedcba9876543210";
         let key = hex::decode(key_hex).unwrap();
         let uri = "ftp://user:pass@example.com/files";
 
@@ -69,7 +100,8 @@ mod tests {
 
     #[test]
     fn test_uri_hierarchy_preserved() {
-        let key_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        // Key must have different halves for security
+        let key_hex = "0123456789abcdef0123456789abcdeffedcba9876543210fedcba9876543210";
         let key = hex::decode(key_hex).unwrap();
         let uri1 = "https://example.com/api/v1/users";
         let uri2 = "https://example.com/api/v1/posts";

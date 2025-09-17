@@ -1,7 +1,24 @@
+//! IPCrypt module for encrypting and decrypting IP addresses
+//!
+//! This module provides format-preserving encryption for both IPv4 and IPv6 addresses
+//! using the IPCrypt-PFX algorithm. The encrypted addresses maintain their network
+//! prefix relationships, which is useful for analytics and network analysis.
+
 use anyhow::{anyhow, Result};
 use ipcrypt_rs::IpcryptPfx;
 use std::net::IpAddr;
 
+/// Encrypt an IP address using format-preserving encryption
+///
+/// # Arguments
+/// * `ip_str` - The IP address to encrypt (IPv4 or IPv6)
+/// * `key` - 32-byte encryption key
+///
+/// # Returns
+/// Encrypted IP address as a string
+///
+/// # Errors
+/// Returns an error if the IP address is invalid or the key is not 32 bytes
 pub fn encrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
     let ip: IpAddr = ip_str
         .parse()
@@ -22,6 +39,17 @@ pub fn encrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
     Ok(encrypted.to_string())
 }
 
+/// Decrypt an encrypted IP address
+///
+/// # Arguments
+/// * `ip_str` - The encrypted IP address to decrypt
+/// * `key` - 32-byte decryption key (must match the encryption key)
+///
+/// # Returns
+/// Decrypted IP address as a string
+///
+/// # Errors
+/// Returns an error if the encrypted IP is invalid or the key is not 32 bytes
 pub fn decrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
     let ip: IpAddr = ip_str
         .parse()

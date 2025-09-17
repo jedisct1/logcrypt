@@ -1,33 +1,63 @@
+//! Utility functions for LogCrypt
+//!
+//! This module provides common utilities for:
+//! - Output formatting (plain text and JSON)
+//! - Batch processing operations
+//! - Key management and validation
+//! - File I/O operations
+
 use crate::cli::{BatchOperation, OutputFormat};
 use crate::{ipcrypt_module, uricrypt_module};
 use anyhow::{anyhow, Result};
 use rand::{rng, Rng};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
 pub fn output_result(result: &str, format: Option<&OutputFormat>) -> Result<()> {
-    match format {
-        Some(OutputFormat::Json) | None if std::env::var("JSON_OUTPUT").is_ok() => {
-            let output = json!({
-                "result": result,
-                "success": true
-            });
-            println!("{}", serde_json::to_string_pretty(&output)?);
-        }
-        Some(OutputFormat::Plain) | None => {
-            println!("{}", result);
-        }
-        Some(OutputFormat::Json) => {
-            let output = json!({
-                "result": result,
-                "success": true
-            });
-            println!("{}", serde_json::to_string_pretty(&output)?);
-        }
+    let should_output_json = format.is_some_and(|f| matches!(f, OutputFormat::Json))
+        || std::env::var("JSON_OUTPUT").is_ok();
+
+    if should_output_json {
+        let output = json!({
+            "result": result,
+            "success": true
+        });
+        println!("{}", serde_json::to_string_pretty(&output)?);
+    } else {
+        println!("{}", result);
     }
     Ok(())
+}
+
+fn create_batch_result(
+    input: &str,
+    output: Result<String>,
+    operation_name: &str,
+    line_num: usize,
+) -> (Value, Option<String>) {
+    match output {
+        Ok(result) => (
+            json!({
+                "input": input,
+                "output": result,
+                "operation": operation_name,
+                "success": true
+            }),
+            None,
+        ),
+        Err(e) => {
+            let error_msg = Some(format!("Line {}: {}", line_num + 1, e));
+            let result = json!({
+                "input": input,
+                "error": e.to_string(),
+                "operation": operation_name,
+                "success": false
+            });
+            (result, error_msg)
+        }
+    }
 }
 
 pub fn process_batch(
@@ -51,78 +81,31 @@ pub fn process_batch(
             continue;
         }
 
-        let result = match operation {
-            BatchOperation::EncryptIp => match ipcrypt_module::encrypt_ip(line, key) {
-                Ok(encrypted) => json!({
-                    "input": line,
-                    "output": encrypted,
-                    "operation": "encrypt_ip",
-                    "success": true
-                }),
-                Err(e) => {
-                    errors.push(format!("Line {}: {}", line_num + 1, e));
-                    json!({
-                        "input": line,
-                        "error": e.to_string(),
-                        "operation": "encrypt_ip",
-                        "success": false
-                    })
-                }
-            },
-            BatchOperation::DecryptIp => match ipcrypt_module::decrypt_ip(line, key) {
-                Ok(decrypted) => json!({
-                    "input": line,
-                    "output": decrypted,
-                    "operation": "decrypt_ip",
-                    "success": true
-                }),
-                Err(e) => {
-                    errors.push(format!("Line {}: {}", line_num + 1, e));
-                    json!({
-                        "input": line,
-                        "error": e.to_string(),
-                        "operation": "decrypt_ip",
-                        "success": false
-                    })
-                }
-            },
-            BatchOperation::EncryptUri => match uricrypt_module::encrypt_uri(line, key) {
-                Ok(encrypted) => json!({
-                    "input": line,
-                    "output": encrypted,
-                    "operation": "encrypt_uri",
-                    "success": true
-                }),
-                Err(e) => {
-                    errors.push(format!("Line {}: {}", line_num + 1, e));
-                    json!({
-                        "input": line,
-                        "error": e.to_string(),
-                        "operation": "encrypt_uri",
-                        "success": false
-                    })
-                }
-            },
-            BatchOperation::DecryptUri => match uricrypt_module::decrypt_uri(line, key) {
-                Ok(decrypted) => json!({
-                    "input": line,
-                    "output": decrypted,
-                    "operation": "decrypt_uri",
-                    "success": true
-                }),
-                Err(e) => {
-                    errors.push(format!("Line {}: {}", line_num + 1, e));
-                    json!({
-                        "input": line,
-                        "error": e.to_string(),
-                        "operation": "decrypt_uri",
-                        "success": false
-                    })
-                }
-            },
+        let (operation_func, operation_name) = match operation {
+            BatchOperation::EncryptIp => (
+                ipcrypt_module::encrypt_ip as fn(&str, &[u8]) -> Result<String>,
+                "encrypt_ip",
+            ),
+            BatchOperation::DecryptIp => (
+                ipcrypt_module::decrypt_ip as fn(&str, &[u8]) -> Result<String>,
+                "decrypt_ip",
+            ),
+            BatchOperation::EncryptUri => (
+                uricrypt_module::encrypt_uri as fn(&str, &[u8]) -> Result<String>,
+                "encrypt_uri",
+            ),
+            BatchOperation::DecryptUri => (
+                uricrypt_module::decrypt_uri as fn(&str, &[u8]) -> Result<String>,
+                "decrypt_uri",
+            ),
         };
 
+        let (result, error) =
+            create_batch_result(line, operation_func(line, key), operation_name, line_num);
         results.push(result);
+        if let Some(err) = error {
+            errors.push(err);
+        }
     }
 
     let output = json!({
@@ -159,34 +142,39 @@ pub fn get_key_from_env_or_arg(key_arg: &Option<String>) -> Result<Vec<u8>> {
     let key_str = match key_arg {
         Some(key) => key.clone(),
         None => env::var("LOGCRYPT_KEY").map_err(|_| {
-            anyhow!(
+            anyhow::anyhow!(
                 "No key provided. Either use --key flag or set LOGCRYPT_KEY environment variable"
             )
         })?,
     };
 
-    let key_bytes = hex::decode(&key_str).map_err(|e| anyhow!("Invalid hex key: {}", e))?;
+    let key_bytes = hex::decode(&key_str).map_err(|e| anyhow::anyhow!("Invalid hex key: {}", e))?;
 
+    validate_key(&key_bytes)?;
+
+    Ok(key_bytes)
+}
+
+fn validate_key(key: &[u8]) -> Result<()> {
     // Validate key length
-    if key_bytes.len() != 32 {
-        return Err(anyhow!(
+    if key.len() != 32 {
+        return Err(anyhow::anyhow!(
             "Key must be exactly 32 bytes (64 hex characters), got {} bytes",
-            key_bytes.len()
+            key.len()
         ));
     }
 
     // Check if the two halves are different (required for IPCrypt-PFX)
-    let first_half = &key_bytes[0..16];
-    let second_half = &key_bytes[16..32];
+    let (first_half, second_half) = key.split_at(16);
     if first_half == second_half {
-        return Err(anyhow!(
+        return Err(anyhow::anyhow!(
             "Invalid key: The two 16-byte halves of the key must be different for security.\n\
             Your key has identical halves. Please generate a new key using:\n\
             logcrypt generate-key --ensure-different-halves"
         ));
     }
 
-    Ok(key_bytes)
+    Ok(())
 }
 
 pub fn generate_secure_key(_ensure_different_halves: bool) -> Result<String> {
