@@ -43,7 +43,7 @@ pub enum Commands {
         output: Option<OutputFormat>,
     },
 
-    #[command(about = "Encrypt a URI")]
+    #[command(about = "Encrypt a URI", visible_alias = "encrypt-url")]
     EncryptUri {
         #[arg(help = "URI to encrypt")]
         uri: String,
@@ -59,7 +59,7 @@ pub enum Commands {
         output: Option<OutputFormat>,
     },
 
-    #[command(about = "Decrypt an encrypted URI")]
+    #[command(about = "Decrypt an encrypted URI", visible_alias = "decrypt-url")]
     DecryptUri {
         #[arg(help = "Encrypted URI to decrypt")]
         uri: String,
