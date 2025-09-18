@@ -129,6 +129,12 @@ pub enum Commands {
 
         #[arg(long, help = "Show what would be changed without making changes")]
         dry_run: bool,
+
+        #[arg(long, help = "Process only IP addresses (by default, both IPs and URIs are processed)")]
+        ip_only: bool,
+
+        #[arg(long, help = "Process only URIs (by default, both IPs and URIs are processed)")]
+        uri_only: bool,
     },
 }
 

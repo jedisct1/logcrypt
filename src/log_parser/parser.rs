@@ -22,6 +22,8 @@ pub struct ParseOptions {
     pub key: Option<Vec<u8>>,
     pub format: Option<LogFormat>,
     pub dry_run: bool,
+    pub process_ips: bool,
+    pub process_uris: bool,
 }
 
 impl Default for ParseOptions {
@@ -31,6 +33,8 @@ impl Default for ParseOptions {
             key: None,
             format: None,
             dry_run: false,
+            process_ips: true,
+            process_uris: true,
         }
     }
 }
@@ -116,14 +120,18 @@ impl LogParser {
 
         let mut replacements: Vec<(usize, usize, String)> = Vec::new();
 
-        for (start, end, value) in &parsed.ip_positions {
-            let replacement = self.process_ip(value)?;
-            replacements.push((*start, *end, replacement));
+        if self.options.process_ips {
+            for (start, end, value) in &parsed.ip_positions {
+                let replacement = self.process_ip(value)?;
+                replacements.push((*start, *end, replacement));
+            }
         }
 
-        for (start, end, value) in &parsed.uri_positions {
-            let replacement = self.process_uri(value)?;
-            replacements.push((*start, *end, replacement));
+        if self.options.process_uris {
+            for (start, end, value) in &parsed.uri_positions {
+                let replacement = self.process_uri(value)?;
+                replacements.push((*start, *end, replacement));
+            }
         }
 
         replacements.sort_by(|a, b| b.0.cmp(&a.0));
