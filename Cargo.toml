@@ -2,8 +2,8 @@
 name = "logcrypt"
 version = "0.1.0"
 edition = "2021"
-authors = ["LogCrypt Contributors"]
-description = "CLI tool for encrypting/decrypting IP addresses and URIs"
+authors = ["Frank Denis <github@pureftpd.org>"]
+description = "CLI tool for encrypting private data in log files"
 license = "MIT"
 
 [dependencies]
