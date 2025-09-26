@@ -5,6 +5,12 @@ edition = "2021"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "CLI tool for encrypting private data in log files"
 license = "MIT"
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+]
 
 [dependencies]
 ipcrypt-rs = "0.9.4"
