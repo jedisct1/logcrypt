@@ -98,8 +98,8 @@ fn main() -> Result<()> {
                 key,
                 format: format.as_ref().and_then(|f| parse_log_format(f)),
                 dry_run: *dry_run,
-                process_ips: !*uri_only,  // Process IPs unless --uri-only is set
-                process_uris: !*ip_only,  // Process URIs unless --ip-only is set
+                process_ips: !*uri_only, // Process IPs unless --uri-only is set
+                process_uris: !*ip_only, // Process URIs unless --ip-only is set
             };
 
             let sample_lines = utils::read_file_sample(input, 50)?;

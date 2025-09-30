@@ -7,7 +7,7 @@ use crate::ipcrypt_module;
 use crate::uricrypt_module;
 use anyhow::Result;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum ParseOperation {
@@ -77,9 +77,9 @@ impl LogParser {
         let reader = BufReader::new(file);
 
         let mut output: Box<dyn Write> = if let Some(path) = output_path {
-            Box::new(File::create(path)?)
+            Box::new(BufWriter::new(File::create(path)?))
         } else {
-            Box::new(std::io::stdout())
+            Box::new(BufWriter::new(std::io::stdout()))
         };
 
         if self.options.dry_run {
