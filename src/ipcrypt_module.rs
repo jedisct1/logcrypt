@@ -5,7 +5,7 @@
 //! prefix relationships, which is useful for analytics and network analysis.
 
 use anyhow::{anyhow, Result};
-use ipcrypt_rs::IpcryptPfx;
+use ipcrypt2::IpcryptPfx;
 use std::net::IpAddr;
 
 /// Encrypt an IP address using format-preserving encryption
@@ -34,7 +34,9 @@ pub fn encrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
         .map_err(|_| anyhow!("Failed to convert key to array"))?;
 
     let cipher = IpcryptPfx::new(key_array);
-    let encrypted = cipher.encrypt_ipaddr(ip);
+    let encrypted = cipher
+        .encrypt_ipaddr(ip)
+        .map_err(|e| anyhow!("Encryption failed: {}", e))?;
 
     Ok(encrypted.to_string())
 }
@@ -65,7 +67,9 @@ pub fn decrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
         .map_err(|_| anyhow!("Failed to convert key to array"))?;
 
     let cipher = IpcryptPfx::new(key_array);
-    let decrypted = cipher.decrypt_ipaddr(ip);
+    let decrypted = cipher
+        .decrypt_ipaddr(ip)
+        .map_err(|e| anyhow!("Decryption failed: {}", e))?;
 
     Ok(decrypted.to_string())
 }
