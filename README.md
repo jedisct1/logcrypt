@@ -54,7 +54,7 @@ KEY=$(./target/release/logcrypt generate-key)
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/logcrypt.git
+git clone https://github.com/jedisct1/rust-logcrypt.git
 cd logcrypt
 
 # Build with Cargo
