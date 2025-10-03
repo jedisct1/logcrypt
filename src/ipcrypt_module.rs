@@ -5,8 +5,58 @@
 //! prefix relationships, which is useful for analytics and network analysis.
 
 use anyhow::{anyhow, Result};
-use ipcrypt_rs::IpcryptPfx;
+use ipcrypt2::IpcryptPfx;
 use std::net::IpAddr;
+
+/// IP cipher wrapper for reusable cipher instances
+pub struct IpCipher {
+    cipher: IpcryptPfx,
+}
+
+impl IpCipher {
+    /// Create a new IP cipher from a key
+    pub fn new(key: &[u8]) -> Result<Self> {
+        if key.len() != 32 {
+            return Err(anyhow!("Key must be 32 bytes (64 hex characters)"));
+        }
+
+        let key_array: [u8; 32] = key
+            .try_into()
+            .map_err(|_| anyhow!("Failed to convert key to array"))?;
+
+        Ok(Self {
+            cipher: IpcryptPfx::new(key_array),
+        })
+    }
+
+    /// Encrypt an IP address
+    pub fn encrypt(&self, ip_str: &str) -> Result<String> {
+        let ip: IpAddr = ip_str
+            .parse()
+            .map_err(|e| anyhow!("Invalid IP address: {}", e))?;
+
+        let encrypted = self
+            .cipher
+            .encrypt_ipaddr(ip)
+            .map_err(|e| anyhow!("Encryption failed: {}", e))?;
+
+        Ok(encrypted.to_string())
+    }
+
+    /// Decrypt an IP address
+    pub fn decrypt(&self, ip_str: &str) -> Result<String> {
+        let ip: IpAddr = ip_str
+            .parse()
+            .map_err(|e| anyhow!("Invalid IP address: {}", e))?;
+
+        let decrypted = self
+            .cipher
+            .decrypt_ipaddr(ip)
+            .map_err(|e| anyhow!("Decryption failed: {}", e))?;
+
+        Ok(decrypted.to_string())
+    }
+}
 
 /// Encrypt an IP address using format-preserving encryption
 ///
@@ -20,23 +70,8 @@ use std::net::IpAddr;
 /// # Errors
 /// Returns an error if the IP address is invalid or the key is not 32 bytes
 pub fn encrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
-    let ip: IpAddr = ip_str
-        .parse()
-        .map_err(|e| anyhow!("Invalid IP address: {}", e))?;
-
-    // IpcryptPfx uses 32-byte keys for both IPv4 and IPv6
-    if key.len() != 32 {
-        return Err(anyhow!("Key must be 32 bytes (64 hex characters)"));
-    }
-
-    let key_array: [u8; 32] = key
-        .try_into()
-        .map_err(|_| anyhow!("Failed to convert key to array"))?;
-
-    let cipher = IpcryptPfx::new(key_array);
-    let encrypted = cipher.encrypt_ipaddr(ip);
-
-    Ok(encrypted.to_string())
+    let cipher = IpCipher::new(key)?;
+    cipher.encrypt(ip_str)
 }
 
 /// Decrypt an encrypted IP address
@@ -51,23 +86,8 @@ pub fn encrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
 /// # Errors
 /// Returns an error if the encrypted IP is invalid or the key is not 32 bytes
 pub fn decrypt_ip(ip_str: &str, key: &[u8]) -> Result<String> {
-    let ip: IpAddr = ip_str
-        .parse()
-        .map_err(|e| anyhow!("Invalid IP address: {}", e))?;
-
-    // IpcryptPfx uses 32-byte keys for both IPv4 and IPv6
-    if key.len() != 32 {
-        return Err(anyhow!("Key must be 32 bytes (64 hex characters)"));
-    }
-
-    let key_array: [u8; 32] = key
-        .try_into()
-        .map_err(|_| anyhow!("Failed to convert key to array"))?;
-
-    let cipher = IpcryptPfx::new(key_array);
-    let decrypted = cipher.decrypt_ipaddr(ip);
-
-    Ok(decrypted.to_string())
+    let cipher = IpCipher::new(key)?;
+    cipher.decrypt(ip_str)
 }
 
 #[cfg(test)]

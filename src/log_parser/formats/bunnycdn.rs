@@ -82,22 +82,33 @@ impl LogLineParser for BunnyCDNLogParser {
         let mut score = 0.0;
 
         // Check cache status (HIT, MISS, etc.)
-        if let Some(cache_status) = parts.get(0) {
-            if matches!(cache_status.trim(), "HIT" | "MISS" | "STALE" | "UPDATING" | "EXPIRED") {
+        if let Some(cache_status) = parts.first() {
+            if matches!(
+                cache_status.trim(),
+                "HIT" | "MISS" | "STALE" | "UPDATING" | "EXPIRED"
+            ) {
                 score += 0.2;
             }
         }
 
         // Check HTTP status code
         if let Some(status) = parts.get(1) {
-            if status.trim().parse::<u16>().map_or(false, |s| s >= 100 && s < 600) {
+            if status
+                .trim()
+                .parse::<u16>()
+                .is_ok_and(|s| (100..600).contains(&s))
+            {
                 score += 0.2;
             }
         }
 
         // Check timestamp (Unix timestamp in milliseconds)
         if let Some(timestamp) = parts.get(2) {
-            if timestamp.trim().parse::<u64>().map_or(false, |t| t > 1000000000000 && t < 2000000000000) {
+            if timestamp
+                .trim()
+                .parse::<u64>()
+                .is_ok_and(|t| t > 1000000000000 && t < 2000000000000)
+            {
                 score += 0.15;
             }
         }
@@ -145,7 +156,10 @@ mod tests {
 
         // Should detect the URL
         assert_eq!(result.uri_positions.len(), 1);
-        assert_eq!(result.uri_positions[0].2, "https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md");
+        assert_eq!(
+            result.uri_positions[0].2,
+            "https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md"
+        );
     }
 
     #[test]
@@ -155,7 +169,8 @@ mod tests {
         let bunnycdn_line = "HIT|200|1758146509371|164848|4029805|172.56.107.128|-|https://example.com/path|WA|curl/7.74.0|8af30092aac1a36890efd0c82857cb1b|US";
         assert!(parser.confidence(bunnycdn_line) > 0.8);
 
-        let apache_line = "192.168.1.1 - - [01/Jan/2025:12:00:00 +0000] \"GET /index.html HTTP/1.1\" 200 1234";
+        let apache_line =
+            "192.168.1.1 - - [01/Jan/2025:12:00:00 +0000] \"GET /index.html HTTP/1.1\" 200 1234";
         assert!(parser.confidence(apache_line) < 0.3);
     }
 }

@@ -3,11 +3,11 @@ use super::formats::{
     apache::ApacheLogParser, bunnycdn::BunnyCDNLogParser, generic::GenericLogParser,
     json::JsonLogParser, LogFormat, LogLineParser,
 };
-use crate::ipcrypt_module;
+use crate::ipcrypt_module::IpCipher;
 use crate::uricrypt_module;
 use anyhow::Result;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum ParseOperation {
@@ -43,6 +43,7 @@ pub struct LogParser {
     options: ParseOptions,
     format: LogFormat,
     parser: Box<dyn LogLineParser>,
+    ip_cipher: Option<IpCipher>,
 }
 
 impl LogParser {
@@ -56,10 +57,18 @@ impl LogParser {
 
         let parser = Self::get_parser(&format);
 
+        // Pre-create cipher instances for better performance
+        let ip_cipher = if options.process_ips {
+            options.key.as_ref().map(|k| IpCipher::new(k)).transpose()?
+        } else {
+            None
+        };
+
         Ok(Self {
             options,
             format,
             parser,
+            ip_cipher,
         })
     }
 
@@ -77,9 +86,9 @@ impl LogParser {
         let reader = BufReader::new(file);
 
         let mut output: Box<dyn Write> = if let Some(path) = output_path {
-            Box::new(File::create(path)?)
+            Box::new(BufWriter::new(File::create(path)?))
         } else {
-            Box::new(std::io::stdout())
+            Box::new(BufWriter::new(std::io::stdout()))
         };
 
         if self.options.dry_run {
@@ -148,16 +157,16 @@ impl LogParser {
     fn process_ip(&self, ip: &str) -> Result<String> {
         match self.options.operation {
             ParseOperation::Encrypt => {
-                if let Some(key) = &self.options.key {
-                    ipcrypt_module::encrypt_ip(ip, key)
+                if let Some(cipher) = &self.ip_cipher {
+                    cipher.encrypt(ip)
                 } else {
                     Ok("[ENCRYPTED_IP]".to_string())
                 }
             }
             ParseOperation::Decrypt => {
-                if let Some(key) = &self.options.key {
+                if let Some(cipher) = &self.ip_cipher {
                     // If decryption fails, return the original value
-                    match ipcrypt_module::decrypt_ip(ip, key) {
+                    match cipher.decrypt(ip) {
                         Ok(decrypted) => Ok(decrypted),
                         Err(_) => Ok(ip.to_string()),
                     }
