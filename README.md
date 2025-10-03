@@ -248,39 +248,6 @@ logcrypt encrypt-uri "/api/internal/metrics/detailed"
 # -> /encrypted/xyz/metrics/detailed (child of above)
 ```
 
-## Security Considerations
-
-### Key Security
-
-- Never commit keys to version control
-- Use environment variables to avoid command history exposure
-- Rotate keys regularly for production systems
-- Use different keys for different environments
-- Store keys securely using a key management system
-
-### Encryption Properties
-
-- Deterministic: Same input → same output (enables correlation and pattern analysis)
-- Prefix-preserving: Network topology and URI hierarchies remain analyzable
-- Format-preserving: Encrypted data maintains syntactically valid format
-- Privacy-preserving: Original values cannot be recovered without the key
-- Analysis-friendly: Enables statistical analysis, anomaly detection, and pattern recognition on encrypted data
-
-### Best Practices
-
-```bash
-# Good: Using environment variable
-export LOGCRYPT_KEY=$(logcrypt generate-key)
-logcrypt encrypt-ip 192.168.1.1
-
-# Bad: Key visible in command history
-logcrypt encrypt-ip 192.168.1.1 --key abc123...
-
-# Good: Separate keys for different data
-export LOGCRYPT_KEY_PROD=$(logcrypt generate-key)
-export LOGCRYPT_KEY_DEV=$(logcrypt generate-key)
-```
-
 ## Use Cases
 
 ### Privacy-Compliant Log Analysis
@@ -376,41 +343,12 @@ Format detection issues
 logcrypt parse-logs custom.log --format apache --operation redact
 ```
 
-## How Prefix-Preserving Encryption Works
-
-### Traditional Encryption vs LogCrypt
-
-Traditional Encryption:
-
-```
-Original:       192.168.1.1    192.168.1.2    192.168.2.1
-Encrypted:         a7f9c4e3       2b8d1a9f       5e3c7b2a
-```
-
-All relationships lost - useless for analysis
-
-LogCrypt (Prefix-Preserving):
-
-```
-Original:       192.168.1.1    192.168.1.2    192.168.2.1
-Encrypted:       45.67.89.1     45.67.89.2     45.67.90.1
-```
-
-Subnet relationships preserved - analysis ready!
-
-### Key Benefits
-
-1. Maintains Analytical Value: Statistical analysis, pattern recognition, and anomaly detection work on encrypted data
-2. Preserves Hierarchies: Network topology and API endpoint structures remain intact
-3. Enables Correlation: Trace requests across systems while protecting sensitive identifiers
-4. Privacy by Design: Original values cannot be recovered without the encryption key
-
 ## Architecture
 
 ### Building Blocks
 
-- IPCrypt-PFX: Advanced format-preserving encryption that maintains IP prefix relationships
-- URICrypt: Hierarchy-preserving encryption that maintains URI path relationships
+- [IPCrypt](https://ipcrypt-std.github.io): Format-preserving encryption that maintains IP prefix relationships
+- [URICrypt](https://datatracker.ietf.org/doc/draft-denis-uricrypt/): Hierarchy-preserving encryption that maintains URI path relationships
 
 ### Privacy-Preserving Analysis
 
