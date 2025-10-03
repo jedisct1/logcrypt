@@ -36,10 +36,20 @@ KEY=$(./target/release/logcrypt generate-key)
 
 ### Log File Processing
 
-- Auto-detection: Automatically identifies Apache, Nginx, JSON, Syslog formats
+- Auto-detection: Automatically identifies log format by analyzing file content
 - Batch processing: Handle entire log files efficiently
 - Structure preservation: Maintains original log format
 - Multiple operations: Encrypt, decrypt, or redact sensitive data
+
+Supported Log Formats:
+
+- Apache Combined Log Format
+- Apache Common Log Format (CLF)
+- Bunny HTTP logs
+- JSON logs
+- Syslog format
+- Application logs (with ERROR/WARN/INFO/DEBUG markers)
+- Generic fallback (uses regex patterns for unrecognized formats)
 
 ### Additional Features
 
