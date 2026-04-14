@@ -9,7 +9,7 @@
 use crate::cli::{BatchOperation, OutputFormat};
 use crate::{ipcrypt_module, uricrypt_module};
 use anyhow::{anyhow, Result};
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use serde_json::{json, Value};
 use std::env;
 use std::fs::File;
